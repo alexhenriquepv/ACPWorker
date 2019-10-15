@@ -1,0 +1,101 @@
+_package sw
+
+def_slotted_exemplar(:acpworker,
+	{
+		{:name, _unset }
+	},
+	{:user_acp}
+)
+$
+
+acpworker.define_shared_variable(:protocols, equality_property_list.new_with("get_all", :|get_all()|), :public)
+acpworker.define_shared_constant(:success_code, 0, :public)
+
+_method acpworker.new(name,  exe_path)
+	>> _clone.init(name,  exe_path)
+_endmethod
+
+_private _method acpworker.init(name,  exe_path)
+	_self.init_copy()
+	.name << name
+	.command << {write_string(exe_path )}
+	.program_ident << name
+	.minimum_protocol << 0
+	.maximum_protocol << 1
+	print(.command)
+	>> _self
+_endmethod
+
+_method acpworker.select_protocol()
+	_return 0
+_endmethod
+
+_method acpworker.register_protocol(protocol_name, method_name)
+	_self.protocols[protocol_name] << method_name
+_endmethod
+
+_method acpworker.send_error_message(message)
+	_self.put_unsigned_byte(1)
+	_self.put_chars(message)
+	_return 
+_endmethod
+
+_method acpworker.send_success_status()
+	_self.put_unsigned_byte(_self.success_code)
+_endmethod
+
+_method acpworker.start()
+	_protect
+		_self.lock()
+		_loop
+			_local protocol_name << _self.get_chars()
+			_local method_name << _self.protocols[protocol_name]
+			_if method_name _is _unset 
+			_then
+				write("Magik acpworker: ", "Unknown protocol: ", protocol_name)
+				_self.send_error_message(write_string("Magik acpworker: ", "Unknown protocol"))
+				_return
+			_endif
+			_self.perform(method_name)
+		_endloop
+	_protection
+		_self.close()
+		_self.unlock()
+	_endprotect 
+_endmethod
+
+_method acpworker.get_all()
+	_local dataset_name << _self.get_chars()
+	_local collection_name << _self.get_chars()
+	_local ds << gis_program_manager.databases[dataset_name.as_symbol()]
+
+	# verifica a existencia do dataset pedido
+	_if ds _is _unset
+	_then
+		_self.send_error_message(write_string("The Dataset ", dataset_name, " does not exists"))
+		_return
+	_endif
+
+	# verifica a existencia da collection informada
+	_local collection << ds.collections[collection_name.as_symbol()]
+	_if collection _is _unset
+	_then
+		_self.send_error_message(write_string("The collection ", collection_name, " does not exists"))
+		_return
+	_endif
+
+	# envia o resultado positivo
+	_self.send_success_status()
+	_self.put_chars(write_string("a collection ", collection_name, " possui ", collection.size, " registros"))
+	_self.flush()
+_endmethod
+
+_global external_worker << _proc(name, exe)
+	_local pp << _proc()
+		_import name, exe
+		_local g << acpworker.new(name, exe)
+		g.start()
+	_endproc.fork_at(light_thread.vm_priority - 1)
+_endproc
+
+#external_worker("w1", "C:\Users\ahpv\Documents\Scripts\acp\server\server.exe")
