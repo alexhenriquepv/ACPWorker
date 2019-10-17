@@ -10,15 +10,16 @@ $
 
 acpworker.define_shared_variable(:protocols, equality_property_list.new_with("get_all", :|get_all()|), :public)
 acpworker.define_shared_constant(:success_code, 0, :public)
+acpworker.define_shared_constant(:default_delimiter, "|", :public)
 
-_method acpworker.new(name,  exe_path)
-	>> _clone.init(name,  exe_path)
+_method acpworker.new(name, exe_path)
+	>> _clone.init(name, exe_path)
 _endmethod
 
-_private _method acpworker.init(name,  exe_path)
+_private _method acpworker.init(name, exe)
 	_self.init_copy()
 	.name << name
-	.command << {write_string(exe_path )}
+	.command << {write_string(exe)}
 	.program_ident << name
 	.minimum_protocol << 0
 	.maximum_protocol << 1
@@ -49,19 +50,32 @@ _method acpworker.start()
 		_self.lock()
 		_loop
 			_local protocol_name << _self.get_chars()
+			_if protocol_name = "server_fail" _then _leave _endif
+			_if protocol_name = "server_stop" _then _leave _endif
+			
 			_local method_name << _self.protocols[protocol_name]
 			_if method_name _is _unset 
 			_then
 				write("Magik acpworker: ", "Unknown protocol: ", protocol_name)
 				_self.send_error_message(write_string("Magik acpworker: ", "Unknown protocol"))
-				_return
+				_self.get_chars()
+				_self.get_chars()
+				_continue
 			_endif
 			_self.perform(method_name)
 		_endloop
 	_protection
-		_self.close()
-		_self.unlock()
+		_self.stop()
 	_endprotect 
+_endmethod
+
+_method acpworker.stop()
+	write("acpworker stop process")
+	_self.send_success_status()
+	_self.put_chars("acpworker process finished")
+	_self.flush()
+	_self.close(_true)
+	_self.unlock()
 _endmethod
 
 _method acpworker.get_all()
@@ -80,22 +94,42 @@ _method acpworker.get_all()
 	_local collection << ds.collections[collection_name.as_symbol()]
 	_if collection _is _unset
 	_then
-		_self.send_error_message(write_string("The collection ", collection_name, " does not exists"))
+		_self.send_error_message(write_string("The Collection ", collection_name, " does not exists"))
 		_return
 	_endif
 
 	# envia o resultado positivo
 	_self.send_success_status()
-	_self.put_chars(write_string("a collection ", collection_name, " possui ", collection.size, " registros"))
+	_local response_message << char16_string.new_from("")
+	_for field _over collection.all_fields.fast_elements()
+	_loop
+		response_message.add_all_last(field.name.as_charvec())
+		response_message.add_all_last(_self.default_delimiter)
+	_endloop
+
+	response_message.remove_last()
+	_self.put_chars(write_string(response_message))
 	_self.flush()
 _endmethod
 
-_global external_worker << _proc(name, exe)
-	_local pp << _proc()
+_global acpw_snapshot << _unset
+_global acpw_thread << _unset
+
+_global acpw_start << _proc(name, exe)
+	_global acpw_thread, acpw_snapshot
+	acpw_thread << _proc()
 		_import name, exe
-		_local g << acpworker.new(name, exe)
-		g.start()
+		_global acpw_snapshot
+		acpw_snapshot << acpworker.new(name, exe)
+		acpw_snapshot.start()
 	_endproc.fork_at(light_thread.vm_priority - 1)
+_endproc 
+
+_global acpw_stop << _proc()
+	_global acpw_snapshot
+	acpw_snapshot.stop()
 _endproc
 
-#external_worker("w1", "C:\Users\ahpv\Documents\Scripts\acp\server\server.exe")
+# load_file("C:\Users\ahpv\Documents\Scripts\acp\acpworker.magik")
+# acpw_start("w1", "C:\Users\ahpv\Documents\Scripts\acp\server\server.exe")
+# acpw_stop()

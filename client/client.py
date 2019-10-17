@@ -14,8 +14,8 @@ def rpc_call (url, method, args) :
     response = f.read()
     return json.loads(response)
 
-url = "http://10.84.125.24:4001/rpc"
-args = {'Dataset': "electric", 'Collection': 'eo_cable'}
+url = "http://localhost:4001/rpc"
+args = {'Method': 'server_stop', 'Dataset': "electricity", 'Collection': 'cable'}
 jsondata = rpc_call(url, "TaskService.Show", args)
 
 print(jsondata)
