@@ -13,6 +13,9 @@ var (
 	acp *Acp
 )
 
+type BodyElement map[string]interface{}
+type Body []BodyElement
+
 type TaskArgs struct {
 	Dataset string
 	Collection string
@@ -21,11 +24,12 @@ type TaskArgs struct {
 
 type Task struct {
 	Message string
+	Data Body
 }
 
 type TaskService struct {}
 
-func (h *TaskService) Show (req *http.Request, args *TaskArgs, res *Task) error {
+func (h *TaskService) GetAll (req *http.Request, args *TaskArgs, res *Task) error {
 	
 	// nome do metodo a ser executado
 	acp.PutString(args.Method)
@@ -39,17 +43,31 @@ func (h *TaskService) Show (req *http.Request, args *TaskArgs, res *Task) error 
 	// espera o resultado, 0 - positivo, 1 - negativo
 	status := acp.GetUbyte()
 	
-	// espera a primeira mensagem de resposta (nomes dos campos)
-	message := acp.GetString()
-	
-	// espera a segunda mensagem de resposta (valores dos campos)
-	// values := acp.GetString()
-	// log.Printf("values %s", values)
 	if status != 0 {
 		log.Printf("ACP status fail")
+		message := acp.GetString()
+		res.Message = message
+	} else {
+		no_records := acp.GetUint()
+		no_fields := acp.GetUint()
+		body := make(Body, 0, no_records)
+		
+		for i := 0; i < no_records; i++ {
+			bodyEl := make(BodyElement)
+
+			for j := 0; j < no_fields; j++ {
+				key := acp.GetString()
+				val := acp.GetString()
+				bodyEl[key] = val
+			}
+
+			body = append(body, bodyEl)
+		}
+		
+		res.Message = "Data received ok"
+		res.Data = body
 	}
 	
-	res.Message = message
 	return nil
 }
 

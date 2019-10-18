@@ -100,15 +100,31 @@ _method acpworker.get_all()
 
 	# envia o resultado positivo
 	_self.send_success_status()
-	_local response_message << char16_string.new_from("")
-	_for field _over collection.all_fields.fast_elements()
+
+	_local fields << rope.new()
+	_for f _over collection.all_fields.fast_elements()
 	_loop
-		response_message.add_all_last(field.name.as_charvec())
-		response_message.add_all_last(_self.default_delimiter)
+		fields.add(f.name)
 	_endloop
 
-	response_message.remove_last()
-	_self.put_chars(write_string(response_message))
+	# envia a quantidade de objetos a serem enviados
+	_self.put_unsigned_int(collection.size)
+	_self.put_unsigned_int(fields.size)
+
+	_local i << 0
+	_local j << 0
+	_for record _over collection.fast_elements()
+	_loop @records
+		i << i + 1
+		j << 0
+		_for f _over fields.fast_elements()
+		_loop @fields
+			j << j + 1
+			_self.put_chars(write_string(f))
+			_self.put_chars(write_string(record.perform(f)))
+			_self.flush()
+		_endloop
+	_endloop
 	_self.flush()
 _endmethod
 
