@@ -3,6 +3,7 @@ import json
 
 def rpc_call (url, method, args) :
     data = json.dumps({
+        'jsonrpc': "2.0",
         'id': 1,
         'method': method,
         'params': [args]
@@ -15,7 +16,7 @@ def rpc_call (url, method, args) :
     return json.loads(response)
 
 url = "http://localhost:4001/rpc"
-args = {'Method': 'get_all', 'Dataset': "electricity", 'Collection': 'cable'}
+args = {'Method': 'get_all', 'Dataset': "electricity", 'Collection': 'substation'}
 jsondata = rpc_call(url, "TaskService.GetAll", args)
 
 print(jsondata)

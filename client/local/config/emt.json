@@ -1,0 +1,71 @@
+{
+    "appURL": "http://localhost:4001/rpc",
+    "dataset": "electricity",
+    "map": {
+        "basemap": "topo-vector"
+    },
+    "mapView": {
+        "center": [-35.599086, -6.807915],
+        "zoom": 13
+    },
+    "features": [
+        {
+            "id": "eo_cable",
+            "title": "Cable",
+            "objectIdField": "id",
+            "fields": [
+                { "name": "id", "type": "oid"},
+                { "name": "voltage", "type": "string" },
+                { "name": "known_as", "type": "string"}
+            ]
+        },
+        {
+            "id": "sub_substation",
+            "title": "Substation",
+            "objectIdField": "id",
+            "fields": [
+                { "name": "id", "type": "oid"},
+                { "name": "voltage", "type": "string" },
+                { "name": "known_as", "type": "string"}
+            ]
+        },
+        {
+            "id": "et_tower",
+            "title": "Torre",
+            "objectIdField": "id",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "oid"
+                },
+                {
+                    "name": "voltage",
+                    "type": "string"
+                },
+                {
+                    "name": "known_as",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "id": "eo_cable_segment_inst",
+            "title": "Cable Inst",
+            "objectIdField": "id",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "oid"
+                },
+                {
+                    "name": "voltage",
+                    "type": "string"
+                },
+                {
+                    "name": "known_as",
+                    "type": "string"
+                }
+            ]
+        }
+    ]
+}

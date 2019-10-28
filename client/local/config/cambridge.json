@@ -1,0 +1,44 @@
+{
+    "appURL": "http://localhost:4001/rpc",
+    "dataset": "electricity",
+    "map": {
+        "basemap": "topo-vector"
+    },
+    "mapView": {
+        "center": [0.109577, 52.221841],
+        "zoom": 13
+    },
+    "features": [
+        {
+            "id": "cable",
+            "title": "Cable",
+            "objectIdField": "id",
+            "fields": [
+                { "name": "id", "type": "oid"},
+                { "name": "voltage", "type": "string" },
+                { "name": "known_as", "type": "string"}
+            ]
+        },
+        {
+            "id": "substation",
+            "title": "Substation",
+            "objectIdField": "id",
+            "fields": [
+                { "name": "id", "type": "oid"},
+                { "name": "voltage", "type": "string" },
+                { "name": "known_as", "type": "string"}
+            ]
+        },
+        {
+            "id": "supply_point",
+            "title": "Supply Point",
+            "objectIdField": "id",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "oid"
+                }
+            ]
+        }
+    ]
+}
