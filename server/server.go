@@ -6,10 +6,13 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"encoding/json"
+	"github.com/patrickmn/go-cache"
+	"time"
 )
 
-var (
+var(
 	acp *Acp
+	cacheData = cache.New(2 * time.Minute, 3 * time.Minute)
 )
 
 type Coordinate []float64
@@ -25,6 +28,7 @@ type Feature struct {
 
 type Collection struct {
 	Features []Feature `json:"features"`
+	name string
 }
 
 type TaskArgs struct {
@@ -57,12 +61,6 @@ func (r *FeaturesResponse) GetBody() interface{} {
 	return r.Data
 }
 
-func (h *ReqHandler) addJSONHeader(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(http.StatusOK)
-}
-
 func (h *ReqHandler) encodeResponse(w http.ResponseWriter, response *FeaturesResponse) {
 	var (
 		err error
@@ -77,10 +75,13 @@ func (h *ReqHandler) encodeResponse(w http.ResponseWriter, response *FeaturesRes
 		log.Printf("Error Encode response body: %s", err)
 		return
 	}
+
+	cacheData.Set(response.Data.name, response, cache.DefaultExpiration)
 }
 
 func (h *ReqHandler) GetAll (w http.ResponseWriter, r *http.Request) {
 
+	var fResponse = &FeaturesResponse{}
 	var data TaskArgs
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&data)
@@ -88,85 +89,82 @@ func (h *ReqHandler) GetAll (w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// nome do metodo a ser executado
-	acp.PutString(data.Method)
-
-	// nome do dataset
-	acp.PutString(data.Dataset)
-
-	// nome da collection
-	acp.PutString(data.Collection)
-
-	// espera o resultado, 0 - positivo, 1 - negativo
-	status := acp.GetUbyte()
-
-	var fResponse = &FeaturesResponse{}
-	
-	if status != 0 {
-		log.Printf("ACP status fail")
-		message := acp.GetString()
-		fResponse.Message = message
+	// verifica a existencia dos dados no cache
+	content, found := cacheData.Get(data.Collection)
+	if found {
+		log.Println("content in cache")
+		fResponse = content.(*FeaturesResponse)
 	} else {
-		no_records := acp.GetUint()
-		no_fields := acp.GetUint()
-		collection := Collection{}
-		
-		for i := 0; i < no_records; i++ {
-			var feature Feature
-			fields := make(map[string]interface{})
-			log.Printf("enviando %d de %d", i + 1, no_records)
-			for j := 0; j < no_fields; j++ {
-				log.Printf("wait field_type")
-				field_type := acp.GetString()
-				log.Printf("wait key")
-				key := acp.GetString()
-				log.Printf("start field %s - %s, %d de %d", key, field_type, j + 1, no_fields)
-				if field_type == "chain" {
-					feature.Geometry.GeometryType = field_type
-					no_segments := acp.GetUint()
-					no_coords := no_segments * 2
-					for k := 0; k < no_coords; k++ {
+		log.Println("content not cached")
+
+		// nome do metodo a ser executado
+		acp.PutString(data.Method)
+
+		// nome do dataset
+		acp.PutString(data.Dataset)
+
+		// nome da collection
+		acp.PutString(data.Collection)
+
+		// espera o resultado, 0 - positivo, 1 - negativo
+		status := acp.GetUbyte()
+
+		if status != 0 {
+			log.Printf("ACP status fail")
+			message := acp.GetString()
+			fResponse.Message = message
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			no_records := acp.GetUint()
+			no_fields := acp.GetUint()
+			collection := Collection{ name: data.Collection }
+			
+			for i := 0; i < no_records; i++ {
+				var feature Feature
+				fields := make(map[string]interface{})
+				for j := 0; j < no_fields; j++ {
+					field_type := acp.GetString()
+					key := acp.GetString()
+					if field_type == "chain" {
+						feature.Geometry.GeometryType = field_type
+						no_segments := acp.GetUint()
+						no_coords := no_segments * 2
+						for k := 0; k < no_coords; k++ {
+							coordinate := Coordinate{acp.GetFloat(), acp.GetFloat()}
+							feature.AddCoordinates(coordinate)
+						}
+					} else if field_type == "point" {
+						feature.Geometry.GeometryType = field_type
 						coordinate := Coordinate{acp.GetFloat(), acp.GetFloat()}
 						feature.AddCoordinates(coordinate)
-					}
-				} else if field_type == "point" {
-					feature.Geometry.GeometryType = field_type
-					coordinate := Coordinate{acp.GetFloat(), acp.GetFloat()}
-					feature.AddCoordinates(coordinate)
-				} else if field_type == "area" {
-					feature.Geometry.GeometryType = field_type
-					log.Printf("wait no_coords")
-					no_coords := acp.GetUint()
-					// sobra := acp.GetString()
-					log.Printf("no_coords: %d", no_coords)
-					for k := 0; k < no_coords; k++ {
-						coordinate := Coordinate{acp.GetFloat(), acp.GetFloat()}
-						feature.AddCoordinates(coordinate)
+					} else if field_type == "area" {
+						feature.Geometry.GeometryType = field_type
+						no_coords := acp.GetUint()
+						for k := 0; k < no_coords; k++ {
+							coordinate := Coordinate{acp.GetFloat(), acp.GetFloat()}
+							feature.AddCoordinates(coordinate)
+						}
+					} else {
+						fields[key] = acp.GetString()
 					}
 
-					log.Printf("mounted polygon")
-				} else {
-					fields[key] = acp.GetString()
+					feature.Attributes = fields
 				}
-
-				feature.Attributes = fields
-				log.Printf("end field")
+				collection.Features = append(collection.Features, feature)
 			}
-			collection.Features = append(collection.Features, feature)
-			log.Printf("end record")
+			
+			fResponse.Message = "Data received ok"
+			fResponse.Data = collection
+			w.WriteHeader(http.StatusOK)
 		}
-		log.Printf("end collection")
-		fResponse.Message = "Data received ok"
-		fResponse.Data = collection
+	}
 
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		h.encodeResponse(w, fResponse)
-	}	
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	h.encodeResponse(w, fResponse)
 }
 
 func main () {
-
+	
 	acp = NewAcp("w1")
 
 	if err := acp.Connect("w1", 0, 1); err != nil {
