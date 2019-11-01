@@ -137,20 +137,18 @@ _method acpworker.get_all()
 	_endloop
 
 	# envia a quantidade de objetos a serem enviados
-	_self.put_unsigned_int(2000)
+	_local rows_to_send << min(600, collection.size)
+	_self.put_unsigned_int(rows_to_send)
 	_self.put_unsigned_int(fields.size)
-
+	
 	_local count << 0
 	_for record _over collection.fast_elements()
 	_loop @records
-		_if count = 2000 _then _leave _endif
+		_if count = 600 _then _leave _endif
 		_for f _over fields.fast_elements()
 		_loop @fields
 			_local current_field << record.perform(f)
-			write("mgk send type")
 			_self.put_chars(write_string(current_field.class_name))
-			_self.flush()
-			write("mgk send key")
 			_self.put_chars(write_string(f))
 			_self.flush()
 
@@ -164,7 +162,6 @@ _method acpworker.get_all()
 					_self.put_float(coord[1].y)
 					_self.put_float(coord[2].x)
 					_self.put_float(coord[2].y)
-					_self.flush()
 				_endloop
 			_elif current_field.class_name _is :point
 			_then

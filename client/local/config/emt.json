@@ -1,71 +1,110 @@
 {
-    "appURL": "http://localhost:4001/rpc",
-    "dataset": "electricity",
+    "appURL": "http://10.84.125.24:4001/rpc",
+    "dataset": "electric",
     "map": {
         "basemap": "topo-vector"
     },
     "mapView": {
-        "center": [-35.599086, -6.807915],
+        "center": [-35.900037, -7.230736],
         "zoom": 13
     },
-    "features": [
-        {
-            "id": "eo_cable",
-            "title": "Cable",
-            "objectIdField": "id",
-            "fields": [
-                { "name": "id", "type": "oid"},
-                { "name": "voltage", "type": "string" },
-                { "name": "known_as", "type": "string"}
-            ]
-        },
+    "layers": [
         {
             "id": "sub_substation",
-            "title": "Substation",
+            "title": "Sub estação",
             "objectIdField": "id",
             "fields": [
                 { "name": "id", "type": "oid"},
-                { "name": "voltage", "type": "string" },
-                { "name": "known_as", "type": "string"}
-            ]
+                { "name": "name", "type": "string" },
+                { "name": "type", "type": "string"}
+            ],
+            "geometryType": "point",
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-marker",
+                    "style": "square",
+                    "color": [76,175,80],
+                    "size": "20px"
+                }
+            },
+            "popupTemplate": [
+                {
+                    "type": "fields",
+                    "fieldInfos": [
+                        { "fieldName": "id" },
+                        { "fieldName": "name" },
+                        { "fieldName": "type" }
+                    ]
+                }
+            ],
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         },
         {
             "id": "et_tower",
-            "title": "Torre",
+            "title": "Torre de transmissão",
             "objectIdField": "id",
             "fields": [
-                {
-                    "name": "id",
-                    "type": "oid"
-                },
-                {
-                    "name": "voltage",
-                    "type": "string"
-                },
-                {
-                    "name": "known_as",
-                    "type": "string"
+                {"name": "id","type": "oid"},
+                {"name": "atos_altura","type": "string"},
+                {"name": "atos_tipo_estrutura","type": "string"}
+            ],
+            "geometryType": "point",
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-marker",
+                    "style": "triangle",
+                    "color": [21,101,192],
+                    "size": "20px"
                 }
-            ]
+            },
+            "popupTemplate": [
+                {
+                    "type": "fields",
+                    "fieldInfos": [
+                        { "fieldName": "id" },
+                        { "fieldName": "atos_altura" },
+                        { "fieldName": "atos_tipo_estrutura" }
+                    ]
+                }
+            ],
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         },
         {
             "id": "eo_cable_segment_inst",
-            "title": "Cable Inst",
+            "title": "Vão AT",
             "objectIdField": "id",
             "fields": [
+                {"name": "id","type": "oid"},
+                {"name": "alias","type": "string"},
+                {"name": "calculated_length","type": "string"},
+                {"name": "circuit_id","type": "string"}
+            ],
+            "geometryType": "polyline",
+            "popupTemplate": [
                 {
-                    "name": "id",
-                    "type": "oid"
-                },
-                {
-                    "name": "voltage",
-                    "type": "string"
-                },
-                {
-                    "name": "known_as",
-                    "type": "string"
+                    "type": "fields",
+                    "fieldInfos": [
+                        { "fieldName": "id" },
+                        { "fieldName": "alias" },
+                        { "fieldName": "calculated_length" },
+                        { "fieldName": "circuit_id" }
+                    ]
                 }
-            ]
+            ],
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-line",
+                    "color": [226,119,40],
+                    "width": 4
+                }
+            },
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         }
     ]
 }

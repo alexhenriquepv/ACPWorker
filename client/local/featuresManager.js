@@ -1,11 +1,5 @@
 define([], () => {
 
-    const symbol = {
-        type: "simple-line",
-        color: [226, 119, 40],
-        width: 4
-    }
-
     function fieldInfos (attributes) {
         let fieldInfos = []
         Object.keys(attributes).forEach(k => fieldInfos.push({ fieldName: k }))
@@ -42,7 +36,6 @@ define([], () => {
                                 type: "polyline",
                                 paths: chainPaths(f.Geometry.coordinates)
                             },
-                            symbol: symbol,
                             attributes: f.attributes,
                             popupTemplate: {
                                 title: "{id}",
@@ -61,8 +54,7 @@ define([], () => {
                                 type: "polygon",
                                 rings: polygonRings(f.Geometry.coordinates)
                             },
-                            symbol: symbol,
-                            attributes: f.properties,
+                            attributes: f.attributes,
                             popupTemplate: {
                                 title: "{id}",
                                 content: [
@@ -81,13 +73,7 @@ define([], () => {
                                 longitude: f.Geometry.coordinates[0][0],
                                 latitude: f.Geometry.coordinates[0][1]
                             },
-                            symbol: {
-                                type: "simple-marker",
-                                style: "square",
-                                color: [226, 119, 40],
-                                size: "8px",
-                            },
-                            attributes: f.properties,
+                            attributes: f.attributes,
                             popupTemplate: {
                                 title: "{id}",
                                 content: [

@@ -1,5 +1,5 @@
 {
-    "appURL": "http://localhost:4001/rpc",
+    "appURL": "http://10.84.125.24:4001/rpc",
     "dataset": "electricity",
     "map": {
         "basemap": "topo-vector"
@@ -8,16 +8,28 @@
         "center": [0.109577, 52.221841],
         "zoom": 13
     },
-    "features": [
+    "layers": [
         {
             "id": "cable",
             "title": "Cable",
             "objectIdField": "id",
             "fields": [
                 { "name": "id", "type": "oid"},
-                { "name": "voltage", "type": "string" },
+                { "name": "length", "type": "string" },
+                { "name": "status", "type": "string" },
                 { "name": "known_as", "type": "string"}
-            ]
+            ],
+            "geometryType": "polyline",
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-line",
+                    "color": [226,119,40],
+                    "width": 4
+                }
+            },
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         },
         {
             "id": "substation",
@@ -25,9 +37,20 @@
             "objectIdField": "id",
             "fields": [
                 { "name": "id", "type": "oid"},
-                { "name": "voltage", "type": "string" },
                 { "name": "known_as", "type": "string"}
-            ]
+            ],
+            "geometryType": "point",
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-marker",
+                    "style": "triangle",
+                    "color": [21,101,192],
+                    "size": "50px"
+                }
+            },
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         },
         {
             "id": "supply_point",
@@ -38,7 +61,19 @@
                     "name": "id",
                     "type": "oid"
                 }
-            ]
+            ],
+            "geometryType": "polygon",
+            "renderer": {
+                "type": "simple",
+                "symbol": {
+                    "type": "simple-marker",
+                    "style": "square",
+                    "color": [76,175,80],
+                    "size": "15px"
+                }
+            },
+            "spatialReference": { "wkid": 4326 },
+            "source": []
         }
     ]
 }
